@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>NYC 311 Scout</title>
+  <title>What are New Yorkers reporting around you?</title>
   <style>
     :root { color-scheme: light; --ink:#183431; --muted:#62726b; --paper:#faf8f1; --line:#dddcd0; --green:#245b45; }
     * { box-sizing:border-box; }
@@ -13,8 +13,11 @@
     .brand span { background:var(--green); color:white; padding:3px 8px; border-radius:6px; margin-right:8px; }
     .tag { font-size:12px; text-transform:uppercase; letter-spacing:1.5px; color:var(--muted); }
     main { max-width:1208px; margin:auto; padding:38px 24px; }
-    h1 { font-size:clamp(30px,4vw,48px); letter-spacing:-1.8px; line-height:1.15; margin:8px 0 14px; max-width:760px; }
-    .intro { color:var(--muted); max-width:680px; margin:0 0 30px; }
+    h1 { font-size:clamp(30px,4vw,48px); letter-spacing:-1.8px; line-height:1.15; margin:8px 0 14px; width:100%; }
+    .intro { color:var(--ink); width:100%; margin:0 0 8px; }
+    .context-note { margin:0 0 28px; padding:16px 20px; border:1px solid var(--line); border-radius:10px; background:white; }
+    .fine-print { color:var(--muted); font-size:12px; line-height:1.45; }
+    .fine-print a { white-space:nowrap; }
     .layout { display:grid; grid-template-columns:310px 1fr; gap:24px; align-items:start; }
     .panel { background:white; border:1px solid var(--line); border-radius:14px; overflow:hidden; }
     aside { padding:24px; }
@@ -41,8 +44,6 @@
     details { margin-top:12px; font-size:12px; background:white; padding:9px 12px; border:1px solid var(--line); border-radius:6px; }
     summary { cursor:pointer; font-weight:650; }
     pre { overflow:auto; max-height:300px; white-space:pre-wrap; overflow-wrap:anywhere; }
-    .suggestions { display:flex; flex-wrap:wrap; gap:8px; margin:5px 0 20px; }
-    .suggestions button { font-size:12px; text-align:left; }
     #chat-form { padding:18px 22px; border-top:1px solid var(--line); }
     .compose { display:flex; gap:10px; align-items:end; }
     textarea { resize:vertical; min-height:64px; }
@@ -54,9 +55,16 @@
 <body>
   <header><div class="brand"><span>311</span>NYC Scout</div><div class="tag">A closer look at everyday city life</div></header>
   <main>
-    <div class="tag">Noise. Trash. Rats. The everyday stuff.</div>
     <h1>What are New Yorkers reporting around you?</h1>
-    <p class="intro">Explore a ZIP code, compare the issues you care about, and see how reports are changing. Ask a follow-up—the scout remembers this conversation.</p>
+    <section class="context-note" aria-label="About NYC 311 Scout">
+      <p class="intro">Hi, I’m NYC Scout. I can show 311 reports for a ZIP code, compare two ZIP codes' reports, and check whether reports about an issue are increasing. Try them below!</p>
+      <div class="fine-print">
+        <strong>Read the numbers with context.</strong>
+        311 records what people report. Reports may repeat, and reporting habits differ. Counts do not measure safety or prove how a place feels to live in.<br>
+        <a href="https://data.cityofnewyork.us/d/erm2-nwe9" target="_blank" rel="noreferrer">Source: NYC Open Data 311 ↗</a>
+        · Data is updated daily; recent reports may lag.
+      </div>
+    </section>
     <div class="layout">
       <aside class="panel">
         <h2>Start with your ZIP</h2>
@@ -67,24 +75,18 @@
           <select id="days"><option value="7">7 complete days</option><option value="30" selected>30 complete days</option><option value="90">90 complete days</option></select>
           <button class="primary" type="submit">Explore reports →</button>
         </form>
-        <div class="note small"><strong>Read the numbers with context.</strong><br>311 records what people report. Reports may repeat, and reporting habits differ. Counts do not measure safety or prove how a place feels to live in.</div>
-        <p class="small"><a href="https://data.cityofnewyork.us/d/erm2-nwe9" target="_blank" rel="noreferrer">Source: NYC Open Data 311 ↗</a><br>Data is updated daily; recent reports may lag.</p>
       </aside>
       <section class="panel" aria-label="Chat with NYC 311 Scout">
         <div class="chat-title"><h2>Your neighborhood questions</h2><button id="clear" type="button">New chat</button></div>
         <div id="messages" role="log" aria-live="polite"></div>
         <form id="chat-form">
-          <div class="suggestions">
-            <button type="button" data-prompt="Compare 10027 and 10025 over the last 30 days. I care about noise and rodents.">Compare two ZIPs</button>
-            <button type="button" data-prompt="Has noise reporting in 10027 increased in the last 30 days compared with the previous 30?">Check a trend</button>
-          </div>
           <label for="message">Ask the scout</label>
           <div class="compose"><textarea id="message" placeholder="What are the most reported issues in 10027?" required></textarea><button type="submit" class="primary">Send</button></div>
           <p id="status" class="small" role="status"></p>
         </form>
       </section>
     </div>
-    <footer class="small">ZIP codes can cross neighborhood boundaries. Tool calls below each response show exactly what the agent looked up and calculated.</footer>
+    <footer class="small">ZIP codes can cross neighborhood boundaries. Tool calls above each response show exactly what the agent looked up and calculated.</footer>
   </main>
   <script>
     // One session ID per tab. The Python process stores the conversation history.
@@ -103,7 +105,7 @@
       const body = document.createElement('div');
       body.className = 'body';
       body.textContent = text;
-      card.append(speaker, body);
+      card.append(speaker);
       for (const call of calls) {
         const detail = document.createElement('details');
         const label = document.createElement('summary');
@@ -115,6 +117,7 @@
         detail.append(label, content);
         card.append(detail);
       }
+      card.append(body);
       messages.append(card);
       messages.scrollTop = messages.scrollHeight;
     }
