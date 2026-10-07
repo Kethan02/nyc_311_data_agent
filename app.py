@@ -47,8 +47,8 @@ def run_agent(messages: list[dict]) -> tuple[str, list[dict]]:
     for _ in range(MAX_TOOL_ROUNDS):
         try:
             reply = litellm.completion(
-                model=MODEL,
-                vertex_location=os.getenv("VERTEXAI_LOCATION", "global"),
+                model="vertex_ai/gemini-3.5-flash-lite",
+                vertex_location="global",
                 messages=messages,
                 tools=TOOLS,
             ).choices[0].message
