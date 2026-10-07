@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NYC 311 Scout</title>
+  <style>
+    :root { color-scheme: light; --ink:#183431; --muted:#62726b; --paper:#faf8f1; --line:#dddcd0; --green:#245b45; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.6 system-ui,sans-serif; }
+    header { border-bottom:1px solid var(--line); padding:19px max(24px,calc((100vw - 1160px)/2)); display:flex; align-items:center; justify-content:space-between; gap:16px; }
+    .brand { font-weight:800; letter-spacing:-.5px; font-size:21px; }
+    .brand span { background:var(--green); color:white; padding:3px 8px; border-radius:6px; margin-right:8px; }
+    .tag { font-size:12px; text-transform:uppercase; letter-spacing:1.5px; color:var(--muted); }
+    main { max-width:1208px; margin:auto; padding:38px 24px; }
+    h1 { font-size:clamp(30px,4vw,48px); letter-spacing:-1.8px; line-height:1.15; margin:8px 0 14px; max-width:760px; }
+    .intro { color:var(--muted); max-width:680px; margin:0 0 30px; }
+    .layout { display:grid; grid-template-columns:310px 1fr; gap:24px; align-items:start; }
+    .panel { background:white; border:1px solid var(--line); border-radius:14px; overflow:hidden; }
+    aside { padding:24px; }
+    h2 { font-size:18px; margin:0 0 18px; }
+    label { display:block; font-size:13px; font-weight:650; margin:15px 0 5px; }
+    input,select,textarea { font:inherit; color:var(--ink); border:1px solid #bfc9bf; border-radius:7px; padding:10px; background:white; width:100%; }
+    input:focus,select:focus,textarea:focus { outline:2px solid #78a591; outline-offset:2px; }
+    button { font:inherit; font-weight:600; cursor:pointer; border:1px solid var(--line); border-radius:7px; padding:10px 14px; color:var(--ink); background:white; }
+    button:hover { background:#edf3ed; }
+    button:disabled { opacity:.5; cursor:wait; }
+    .primary { background:var(--green); color:white; border-color:var(--green); }
+    .primary:hover { background:#173e2f; }
+    aside .primary { margin-top:20px; width:100%; }
+    .small { font-size:12px; color:var(--muted); }
+    .note { margin-top:22px; padding-top:18px; border-top:1px solid var(--line); }
+    a { color:var(--green); }
+    .chat-title { display:flex; justify-content:space-between; align-items:center; padding:16px 22px; border-bottom:1px solid var(--line); }
+    .chat-title h2 { margin:0; }
+    #messages { padding:22px; min-height:300px; max-height:560px; overflow:auto; }
+    .message { margin-bottom:18px; padding:15px 18px; background:#f2f5ef; border-radius:10px; }
+    .message.user { background:#fff4df; margin-left:35px; }
+    .speaker { font-size:11px; font-weight:750; text-transform:uppercase; letter-spacing:1px; margin-bottom:7px; }
+    .body { white-space:pre-wrap; overflow-wrap:anywhere; }
+    details { margin-top:12px; font-size:12px; background:white; padding:9px 12px; border:1px solid var(--line); border-radius:6px; }
+    summary { cursor:pointer; font-weight:650; }
+    pre { overflow:auto; max-height:300px; white-space:pre-wrap; overflow-wrap:anywhere; }
+    .suggestions { display:flex; flex-wrap:wrap; gap:8px; margin:5px 0 20px; }
+    .suggestions button { font-size:12px; text-align:left; }
+    #chat-form { padding:18px 22px; border-top:1px solid var(--line); }
+    .compose { display:flex; gap:10px; align-items:end; }
+    textarea { resize:vertical; min-height:64px; }
+    #status { min-height:20px; margin:7px 0 0; }
+    footer { padding-top:24px; }
+    @media(max-width:760px) { .layout { grid-template-columns:1fr; } header .tag { display:none; } main { padding:24px 16px; } }
+  </style>
+</head>
+<body>
+  <header><div class="brand"><span>311</span>NYC Scout</div><div class="tag">A closer look at everyday city life</div></header>
+  <main>
+    <div class="tag">Noise. Trash. Rats. The everyday stuff.</div>
+    <h1>What are New Yorkers reporting around you?</h1>
+    <p class="intro">Explore a ZIP code, compare the issues you care about, and see how reports are changing. Ask a follow-up—the scout remembers this conversation.</p>
+    <div class="layout">
+      <aside class="panel">
+        <h2>Start with your ZIP</h2>
+        <form id="scout-form">
+          <label for="zip">NYC ZIP code</label>
+          <input id="zip" name="zip" inputmode="numeric" pattern="[0-9]{5}" maxlength="5" placeholder="10027" required>
+          <label for="days">Look back</label>
+          <select id="days"><option value="7">7 complete days</option><option value="30" selected>30 complete days</option><option value="90">90 complete days</option></select>
+          <button class="primary" type="submit">Explore reports →</button>
+        </form>
+        <div class="note small"><strong>Read the numbers with context.</strong><br>311 records what people report. Reports may repeat, and reporting habits differ. Counts do not measure safety or prove how a place feels to live in.</div>
+        <p class="small"><a href="https://data.cityofnewyork.us/d/erm2-nwe9" target="_blank" rel="noreferrer">Source: NYC Open Data 311 ↗</a><br>Data is updated daily; recent reports may lag.</p>
+      </aside>
+      <section class="panel" aria-label="Chat with NYC 311 Scout">
+        <div class="chat-title"><h2>Your neighborhood questions</h2><button id="clear" type="button">New chat</button></div>
+        <div id="messages" role="log" aria-live="polite"></div>
+        <form id="chat-form">
+          <div class="suggestions">
+            <button type="button" data-prompt="Compare 10027 and 10025 over the last 30 days. I care about noise and rodents.">Compare two ZIPs</button>
+            <button type="button" data-prompt="Has noise reporting in 10027 increased in the last 30 days compared with the previous 30?">Check a trend</button>
+          </div>
+          <label for="message">Ask the scout</label>
+          <div class="compose"><textarea id="message" placeholder="What are the most reported issues in 10027?" required></textarea><button type="submit" class="primary">Send</button></div>
+          <p id="status" class="small" role="status"></p>
+        </form>
+      </section>
+    </div>
+    <footer class="small">ZIP codes can cross neighborhood boundaries. Tool calls below each response show exactly what the agent looked up and calculated.</footer>
+  </main>
+  <script>
+    // One session ID per tab. The Python process stores the conversation history.
+    let sessionId = sessionStorage.getItem('nyc311-session');
+    const messages = document.querySelector('#messages');
+    const status = document.querySelector('#status');
+    const input = document.querySelector('#message');
+    let busy = false;
+
+    function addMessage(role, text, calls = []) {
+      const card = document.createElement('article');
+      card.className = 'message ' + role;
+      const speaker = document.createElement('div');
+      speaker.className = 'speaker';
+      speaker.textContent = role === 'user' ? 'You' : 'NYC 311 Scout';
+      const body = document.createElement('div');
+      body.className = 'body';
+      body.textContent = text;
+      card.append(speaker, body);
+      for (const call of calls) {
+        const detail = document.createElement('details');
+        const label = document.createElement('summary');
+        label.textContent = 'Tool: ' + call.name;
+        const content = document.createElement('pre');
+        let result = call.result;
+        try { result = JSON.parse(result); } catch { /* Display plain text results as received. */ }
+        content.textContent = JSON.stringify({name: call.name, args: call.args, result}, null, 2);
+        detail.append(label, content);
+        card.append(detail);
+      }
+      messages.append(card);
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    function setBusy(value) {
+      busy = value;
+      document.querySelectorAll('button').forEach(button => button.disabled = value);
+    }
+
+    async function send(message) {
+      if (busy || !message.trim()) return;
+      setBusy(true);
+      addMessage('user', message);
+      input.value = '';
+      status.textContent = 'Looking into your question…';
+      try {
+        const response = await fetch('/chat', {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({message, session_id: sessionId})
+        });
+        if (!response.ok) throw new Error('Request failed (' + response.status + '). Please try again.');
+        const data = await response.json();
+        sessionId = data.session_id;
+        sessionStorage.setItem('nyc311-session', sessionId);
+        addMessage('assistant', data.response, data.tool_calls);
+        status.textContent = '';
+      } catch (error) {
+        status.textContent = error.message;
+      } finally {
+        setBusy(false);
+        input.focus();
+      }
+    }
+
+    document.querySelector('#scout-form').addEventListener('submit', event => {
+      event.preventDefault();
+      send(`Summarize 311 reports for ZIP ${document.querySelector('#zip').value} over the last ${document.querySelector('#days').value} complete days. What are the main reported issues?`);
+    });
+    document.querySelector('#chat-form').addEventListener('submit', event => {
+      event.preventDefault();
+      send(input.value.trim());
+    });
+    document.querySelectorAll('[data-prompt]').forEach(button => {
+      button.addEventListener('click', () => send(button.dataset.prompt));
+    });
+    document.querySelector('#clear').addEventListener('click', async () => {
+      setBusy(true);
+      try {
+        const response = await fetch('/clear?session_id=' + encodeURIComponent(sessionId || ''), {method:'POST'});
+        if (!response.ok) throw new Error('Could not clear the conversation. Try again.');
+        sessionId = null;
+        sessionStorage.removeItem('nyc311-session');
+        messages.replaceChildren();
+        addMessage('assistant', 'Fresh start. Which NYC ZIP code are you curious about?');
+        status.textContent = '';
+      } catch (error) { status.textContent = error.message; }
+      finally { setBusy(false); }
+    });
+    addMessage('assistant', sessionId
+      ? 'Welcome back. You can continue this tab’s conversation while the server is running, or start a new chat.'
+      : 'Start with a ZIP code, or compare two places based on what bothers you most: noise, sanitation, rodents, housing, or parking.');
+  </script>
+</body>
+</html>
